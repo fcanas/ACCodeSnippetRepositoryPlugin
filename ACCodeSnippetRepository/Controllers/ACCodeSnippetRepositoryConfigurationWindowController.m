@@ -218,6 +218,19 @@ NSString * const ACCodeSnippetRepositoryUpdateRegularlyKey = @"ACCodeSnippetRepo
                            otherButton:nil
              informativeTextWithFormat:@""] beginSheetModalForWindow:self.window completionHandler:nil];
     } else {
+        
+        // Add full path to error's recovery suggestion on permission errors so users know where to look.
+        if ([error.domain isEqualToString:NSCocoaErrorDomain] &&
+            error.code == NSFileWriteNoPermissionError) {
+            NSString *destinationPath = [error userInfo][@"NSDestinationFilePath"];
+            NSString *recoverySuggestionWithPath = [NSString stringWithFormat:@"%@\n\n%@", error.localizedRecoverySuggestion, destinationPath];
+            
+            NSMutableDictionary *userInfo = [[error userInfo] mutableCopy];
+            userInfo[NSLocalizedRecoverySuggestionErrorKey] = recoverySuggestionWithPath;
+            
+            error = [NSError errorWithDomain:error.domain code:error.code userInfo:userInfo];
+        }
+        
         [[NSAlert alertWithError:error] beginSheetModalForWindow:self.window completionHandler:nil];
     }
 }
